@@ -34,7 +34,7 @@ traefik.http.routers.{{ paste_identifier }}.tls={{ paste_container_labels_traefi
 traefik.http.routers.{{ paste_identifier }}.tls.certResolver={{ paste_container_labels_traefik_tls_certResolver }}
 {% endif %}
 
-traefik.http.services.{{ paste_identifier }}.loadbalancer.server.port=80
+traefik.http.services.{{ paste_identifier }}.loadbalancer.server.port=3000
 {% endif %}
 
 {{ paste_container_labels_additional_labels }}
