@@ -19,6 +19,10 @@ paste_path_prefix: /
 # Version of paste to deploy
 paste_version: 1.0.0
 
+# UID and GID for the container user
+paste_uid: ''
+paste_gid: ''
+
 # Base path for paste resources
 paste_base_path: "{{ paste_identifier }}"
 
