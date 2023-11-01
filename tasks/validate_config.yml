@@ -6,8 +6,6 @@
   when: "vars[item] == ''"
   with_items:
     - paste_identifier
-    - paste_uid
-    - paste_gid
     - paste_hostname
     - paste_path_prefix
     - paste_container_network
