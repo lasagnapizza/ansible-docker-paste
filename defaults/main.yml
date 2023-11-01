@@ -1,0 +1,156 @@
+---
+# Project source code URL: https://github.com/lasagnapizza/paste
+
+# Enable or disable paste deployment
+paste_enabled: true
+
+# Identifier string for paste resources (e.g. container names, network names)
+paste_identifier: paste
+
+# The scheme used for serving paste (http or https)
+paste_scheme: https
+
+# The hostname at which paste is served
+paste_hostname: ""
+
+# The path at which paste is served, must either be `/` or not end with a slash (e.g. `/paste`)
+paste_path_prefix: /
+
+# Version of paste to deploy
+paste_version: 1.0.0
+
+# Base path for paste resources
+paste_base_path: "{{ paste_identifier }}"
+
+# Timezone configuration for paste
+paste_timezone: UTC
+
+# Environment to run the application
+paste_rails_env: production
+
+paste_container_image: "{{ paste_container_image_registry_prefix }}/lasagnapizza/paste:{{ paste_container_image_tag }}"
+paste_container_image_registry_prefix: ghcr.io
+paste_container_image_tag: "{{ paste_version }}"
+paste_container_image_force_pull: "{{ paste_container_image.endswith(':latest') }}"
+
+# The base container network. It will be auto-created by this role if it doesn't exist already.
+paste_container_network: "{{ paste_identifier }}"
+
+# A list of additional container networks that the container would be connected to.
+# The role does not create these networks, so make sure they already exist.
+# Use this to expose this container to another reverse proxy, which runs in a different container network.
+paste_container_additional_networks: []
+
+# paste_container_labels_traefik_enabled controls whether labels to assist a Traefik reverse-proxy will be attached to the container.
+# See `../templates/labels.j2` for details.
+#
+# To inject your own other container labels, see `paste_container_labels_additional_labels`.
+paste_container_labels_traefik_enabled: true
+paste_container_labels_traefik_docker_network: "{{ paste_container_network }}"
+paste_container_labels_traefik_hostname: "{{ paste_hostname }}"
+# The path prefix must either be `/` or not end with a slash (e.g. `/paste`).
+paste_container_labels_traefik_path_prefix: "{{ paste_path_prefix }}"
+paste_container_labels_traefik_rule: "Host(`{{ paste_container_labels_traefik_hostname }}`){% if paste_container_labels_traefik_path_prefix != '/' %} && PathPrefix(`{{ paste_container_labels_traefik_path_prefix }}`){% endif %}"
+paste_container_labels_traefik_priority: 0
+paste_container_labels_traefik_entrypoints: web-secure
+paste_container_labels_traefik_tls: "{{ paste_container_labels_traefik_entrypoints != 'web' }}"
+paste_container_labels_traefik_tls_certResolver: default # noqa var-naming
+
+# Controls which additional headers to attach to all HTTP responses.
+# To add your own headers, use `paste_container_labels_traefik_additional_response_headers_custom`
+paste_container_labels_traefik_additional_response_headers: "{{ paste_container_labels_traefik_additional_response_headers_auto | combine(paste_container_labels_traefik_additional_response_headers_custom) }}"
+paste_container_labels_traefik_additional_response_headers_auto: |
+  {{
+    {}
+    | combine ({'X-XSS-Protection': paste_http_header_xss_protection} if paste_http_header_xss_protection else {})
+    | combine ({'X-Frame-Options': paste_http_header_frame_options} if paste_http_header_frame_options else {})
+    | combine ({'X-Content-Type-Options': paste_http_header_content_type_options} if paste_http_header_content_type_options else {})
+    | combine ({'Content-Security-Policy': paste_http_header_content_security_policy} if paste_http_header_content_security_policy else {})
+    | combine ({'Permission-Policy': paste_http_header_content_permission_policy} if paste_http_header_content_permission_policy else {})
+    | combine ({'Strict-Transport-Security': paste_http_header_strict_transport_security} if paste_http_header_strict_transport_security and paste_container_labels_traefik_tls else {})
+  }}
+paste_container_labels_traefik_additional_response_headers_custom: {}
+# paste_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
+# See `../templates/labels.j2` for details.
+#
+# Example:
+# paste_container_labels_additional_labels: |
+#   my.label=1
+#   another.label="here"
+paste_container_labels_additional_labels: ""
+
+# A list of extra arguments to pass to the container
+paste_container_extra_arguments: []
+
+# List of systemd services that paste.service depends on
+paste_systemd_required_services_list: ["docker.service"]
+
+# Specifies the value of the `X-XSS-Protection` header
+# Stops pages from loading when they detect reflected cross-site scripting (XSS) attacks.
+#
+# Learn more about it is here:
+# - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection
+# - https://portswigger.net/web-security/cross-site-scripting/reflected
+paste_http_header_xss_protection: "1; mode=block"
+
+# Specifies the value of the `X-Frame-Options` header which controls whether framing can happen.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
+paste_http_header_frame_options: SAMEORIGIN
+
+# Specifies the value of the `X-Content-Type-Options` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
+paste_http_header_content_type_options: nosniff
+
+# Specifies the value of the `Content-Security-Policy` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+paste_http_header_content_security_policy: frame-ancestors 'self'
+
+# Specifies the value of the `Permission-Policy` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permission-Policy
+paste_http_header_content_permission_policy: "{{ 'interest-cohort=()' if paste_floc_optout_enabled else '' }}"
+
+# Specifies the value of the `Strict-Transport-Security` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+paste_http_header_strict_transport_security: "max-age=31536000; includeSubDomains{{ '; preload' if paste_hsts_preload_enabled else '' }}"
+
+# Controls whether to send a "Permissions-Policy interest-cohort=();" header along with all responses
+#
+# Learn more about what it is here:
+# - https://www.eff.org/deeplinks/2021/03/googles-floc-terrible-idea
+# - https://paramdeo.com/blog/opting-your-website-out-of-googles-floc-network
+# - https://amifloced.org/
+#
+# Of course, a better solution is to just stop using browsers (like Chrome), which participate in such tracking practices.
+# See: `paste_content_permission_policy`
+paste_floc_optout_enabled: true
+
+# Controls if HSTS preloading is enabled
+#
+# In its strongest and recommended form, the [HSTS policy](https://www.chromium.org/hsts) includes all subdomains, and
+# indicates a willingness to be "preloaded" into browsers:
+# `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
+# For more information visit:
+# - https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security
+# - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+# - https://hstspreload.org/#opt-in
+# See: `paste_http_header_strict_transport_security`
+paste_hsts_preload_enabled: false
+
+# PostgreSQL database configuration
+paste_database_username: paste
+paste_database_password: ""
+paste_database_hostname: ""
+paste_database_port: 5432
+paste_database_name: paste_production
+
+# Controls the RAILS_ENV environment variable
+paste_environment_variable_rails_env: "{{ paste_rails_env }}"
+
+# Controls the DATABASE_URL environment variable
+paste_environment_variable_database_url: "postgresql://{{ paste_database_username }}:{{ paste_database_password }}@{{ paste_database_hostname }}:{{ paste_database_port }}/{{ paste_database_name }}"
+
+# Controls the SECRET_KEY_BASE environment variable
+paste_environment_variable_secret_keybase: "{{ paste_cron_min }}"
+
+# Additional environment variables.
+paste_environment_variables_additional_variables: ""
