@@ -32,6 +32,9 @@ paste_timezone: UTC
 # Environment to run the application
 paste_rails_env: production
 
+# Secret key base to encrypt in the application
+paste_secret_key_base: ''
+
 paste_container_image: "{{ paste_container_image_registry_prefix }}/lasagnapizza/paste:{{ paste_container_image_tag }}"
 paste_container_image_registry_prefix: ghcr.io
 paste_container_image_tag: "{{ paste_version }}"
@@ -154,7 +157,7 @@ paste_environment_variable_rails_env: "{{ paste_rails_env }}"
 paste_environment_variable_database_url: "postgresql://{{ paste_database_username }}:{{ paste_database_password }}@{{ paste_database_hostname }}:{{ paste_database_port }}/{{ paste_database_name }}"
 
 # Controls the SECRET_KEY_BASE environment variable
-paste_environment_variable_secret_keybase: "{{ paste_cron_min }}"
+paste_environment_variable_secret_keybase: "{{ paste_secret_key_base }}"
 
 # Additional environment variables.
 paste_environment_variables_additional_variables: ""

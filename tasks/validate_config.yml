@@ -13,6 +13,7 @@
     - paste_container_network
     - paste_database_hostname
     - paste_database_password
+    - paste_secret_key_base
 
 - when: paste_container_labels_traefik_enabled | bool
   block:
