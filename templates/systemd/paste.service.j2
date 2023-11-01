@@ -18,7 +18,6 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
 			--name={{ paste_identifier }} \
 			--log-driver=none \
 			--network={{ paste_container_network }} \
-			--user={{ paste_uid }}:{{ paste_gid }} \
 			--cap-drop=ALL \
 			--env-file={{ paste_base_path }}/env \
 			--label-file={{ paste_base_path }}/labels \
